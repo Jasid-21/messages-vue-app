@@ -19,44 +19,51 @@
 
 <script>
 import { ref } from '@vue/reactivity';
-import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import { useStore } from 'vuex';
+import Swal from 'sweetalert2';
 
 export default {
   name: 'LoginView',
   setup() {
-    
-    const submit = () => {
-      console.log(user.value);
-      console.log(pass.value);
-
-      const url = `/login?username=${user.value}&password=${pass.value}`;
-      fetch(url, {method: 'POST'})
-      .then(resp => {
-        if (resp.status != 200) {
-          console.log(resp.status);  
-        }
-
-        return resp.json();
-      }).then(data => {
-        console.log(data);
-        if (data.msg) {
-          alert(data.msg);
-          return;
-        }
-
-        localStorage.setItem('MSG_token', data.token);
-        localStorage.setItem('MSG_user_id', data.user_id);
-        localStorage.setItem('MSG_username', user.value);
-
-        router.replace('/');
-      });
-    }
-
     const store = useStore();
     const router = useRouter();
-    const user = ref('jasid2');
-    const pass = ref('1234');
+    const base_url = store.state.base_url;
+    const user = ref('');
+    const pass = ref('');
+
+    const submit = async () => {
+      const url = `${base_url}/auth/login`;
+      const json = { username: user.value, password: pass.value };
+      const resp = await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify(json),
+          headers: {
+            "Content-Type": "application/json",
+          }
+        }
+      );
+      console.log(resp.status);
+      const ok = resp.ok;
+      console.log(ok);
+
+      if (!ok) {
+        Swal.fire({
+          title: 'Error message',
+          text: resp.statusText,
+          icon: 'error',
+        });
+        return;
+      }
+
+      const data = await resp.json()
+      console.log(data);
+      localStorage.setItem('MSG_jwt_token', 'Bearer ' + data.token);
+      localStorage.setItem('MSG_username', user.value);
+      localStorage.setItem('MSG_user_id', data.Id);
+
+      router.replace('/');
+    }
 
     return {user, pass, submit}
   }

@@ -3,10 +3,10 @@
         <ul>
             <li v-for="(r, idx) of rooms" 
             :key="idx" 
-            @click="setCurrent(r.room_id)"
-            :class="{current:current.room_id == r.room_id}"
+            @click="setCurrent(r.Id)"
+            :class="{current:current.Id == r.Id}"
             >
-                {{ r.alias != null?r.alias:r.room }}
+                {{ r.name }}
             </li>
         </ul>
     </div>
@@ -18,16 +18,16 @@ import { useStore } from 'vuex';
 
 export default {
     name: 'Rooms',
-    props: ['rooms'],
     setup() {
+        const store = useStore();
+        const rooms = computed(() => store.state.rooms);
+        const current = computed(() => store.state.currentRoom);
+
         const setCurrent = (id) => {
             store.commit('set_current_room', id);
         }
 
-        const store = useStore();
-        const current = computed(() => store.state.currentRoom);
-
-        return {setCurrent, current}
+        return { setCurrent, current, rooms };
     }
 }
 </script>

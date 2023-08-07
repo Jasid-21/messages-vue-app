@@ -16,12 +16,12 @@
 
 <script>
 import { ref } from '@vue/reactivity';
+import { onMounted } from 'vue';
 export default {
     name: 'Navbar',
     setup() {
         const logged = ref(false);
-        const user_id = localStorage.getItem('MSG_user_id');
-        const token = localStorage.getItem('MSG_token');
+        const token = localStorage.getItem('MSG_jwt_token');
 
         const logout = () => {
             const url = `/logout?token=${token}`;
@@ -35,7 +35,7 @@ export default {
             })
         }
 
-        if (user_id && token) {
+        if (token) {
             logged.value = true;
         }
 

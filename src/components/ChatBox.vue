@@ -1,7 +1,7 @@
 <template>
-    <div class="chatBox">
+    <div class="chatBox" v-if="Object.keys(current).length != 0">
         <div class="messages-container">
-            <MessageBbl v-for="(m, idx) of current.messages" :key="idx" :msg="m" :currUser="sender" />
+            <MessageBbl v-for="(m, idx) of current.messages" :key="idx" :msg="m" :currUser="user_id" />
             <div ref="bottom"></div>
         </div>
         <div class="form-container">
@@ -11,6 +11,7 @@
             </form>
         </div>
     </div>
+    <div class="alt_chatBox" v-else></div>
 </template>
 
 <script>
@@ -25,6 +26,15 @@ export default {
         MessageBbl
     },
     setup() {
+        const store = useStore();
+        const socket = computed(() => store.state.io);
+        const current = computed(() => store.state.currentRoom);
+        const message = ref('');
+        const bottom = ref(null);
+
+        const user_id = localStorage.getItem('MSG_user_id');
+        const username = localStorage.getItem('MSG_username');
+
         function getDate() {
             const date = new Date();
             const yr = date.getFullYear();
@@ -48,29 +58,17 @@ export default {
             return dateString;
         }
 
-        const sendMessage = (el) => {
-            console.log(current.value);
-            const date = getDate();
+        const sendMessage = () => {
             const obj = {
-                sender: sender,
-                sender_id,
-                room: current.value.room,
-                room_id: current.value.room_id,
-                date,
+                sender_id: user_id,
+                room_id: current.value.Id,
                 message: message.value
             }
+            console.log(obj);
 
-            socket.value.emit('message', obj);
+            socket.value.emit('new_message', obj);
             message.value = '';
         }
-
-        const store = useStore();
-        const socket = computed(() => store.state.io);
-        const current = computed(() => store.state.currentRoom);
-        const sender = localStorage.getItem('MSG_username');
-        const sender_id = localStorage.getItem('MSG_user_id');
-        const message = ref('');
-        const bottom = ref(null);
 
         watch(current, async () => {
             await nextTick();
@@ -79,12 +77,16 @@ export default {
             deep: true
         });
 
-        return {message, sendMessage, current, sender, bottom}
+        return { message, sendMessage, current, bottom, user_id };
     }
 }
 </script>
 
 <style scoped>
+.alt_chatBox {
+    width: 50%;
+    height: 100%;
+}
 .chatBox {
     width: 50%;
     height: 100%;

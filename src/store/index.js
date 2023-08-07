@@ -2,20 +2,19 @@ import { createStore } from 'vuex'
 
 export default createStore({
   state: {
+    base_url: 'http://localhost:3000',
+    base_ws_url: 'http://localhost:3001',
     io: {},
     rooms: [],
     clients: [],
-    currentRoom: {}
+    currentRoom: {},
   },
   mutations: {
     set_current_room: (state, payload) => {
-      for (var room of state.rooms) {
-        if (room.room_id == payload) {
-          state.currentRoom = room;
-
-          break;
-        }
-      }
+      const room = state.rooms.find((r) => r.Id == payload);
+      if (!room) return;
+      console.log(room);
+      state.currentRoom = room;
     },
 
     set_socket: (state, payload) => {
@@ -25,7 +24,11 @@ export default createStore({
 
     set_rooms: (state, payload) => {
       console.log(payload);
-      state.rooms = payload;
+      const rooms = payload;
+      rooms.forEach((r) => {
+        r.messages = r.messages.reverse();
+      });
+      state.rooms = rooms;
     },
 
     add_room: (state, payload) => {
@@ -50,25 +53,28 @@ export default createStore({
       console.log(state.clients);
     },
 
-    add_message: (state, {room, room_id, msg}) => {
+    add_message: (state, msg) => {
       console.log(msg);
-
-      for (var r of state.rooms) {
-        if (r.room_id == room_id) {
-          r.messages.push(msg);
-          if (state.currentRoom.room_id == room_id) {
-            state.currentRoom = r;
-          }
-
-          break;
-        }
-      }
+      const room_id = msg.room.Id;
+      const room = state.rooms.find((r) => r.Id == room_id);
+      if (!room) return;
+      room.messages.push(msg);
 
       console.log(state.currentRoom.messages);
     }
     
   },
   actions: {
+    add_message({ state, commit }, msg) {
+      const msg_room_id = msg.room.Id;
+      const msg_room = state.rooms.find((r) => r.Id == msg_room_id);
+      if (!msg_room) {
+        const room = { ...msg.room, messages: [] };
+        state.rooms.push(room);
+      }
+
+      commit('add_message', msg);
+    }
   },
   modules: {
   }

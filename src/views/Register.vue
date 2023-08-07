@@ -23,46 +23,49 @@
   <script>
   import { ref } from '@vue/reactivity';
   import { useRouter } from 'vue-router';
+  import { useStore } from 'vuex';
+  import Swal from 'sweetalert2';
   
   export default {
     name: 'LoginView',
     setup() {
-      
-      const submit = () => {
-        console.log(user.value);
-        console.log(pass.value);
-
-        if (pass.value != conf.value) {
-            alert("Passwords doesn't match...");
-        }
-  
-        const url = `/register?username=${user.value}&password=${pass.value}`;
-        fetch(url, {method: 'POST'})
-        .then(resp => {
-          if (resp.status != 200) {
-            console.log(resp.status);  
-          }
-  
-          return resp.json();
-        }).then(data => {
-          console.log(data);
-          if (data.msg) {
-            alert(data.msg);
-            return;
-          }
-  
-          localStorage.setItem('MSG_token', data.token);
-          localStorage.setItem('MSG_user_id', data.user_id);
-          localStorage.setItem('MSG_username', user.value);
-  
-          router.replace('/');
-        });
-      }
-
+      const store = useStore();
       const router = useRouter();
+      const base_url = store.state.base_url;
       const user = ref('');
       const pass = ref('');
       const conf = ref('');
+
+      const submit = async () => {
+        if (pass.value != conf.value) {
+            Swal.fire({
+              title: 'App message',
+              text: 'Pasword and confirmation must match!',
+              icon: 'info',
+            });
+            return;
+        }
+
+        const url = `${base_url}/register?username=${user.value}&password=${pass.value}`;
+        const resp = await fetch(url, {method: 'POST'});
+        const ok = resp.ok;
+
+        if (!ok) {
+          Swal.fire({
+            title: 'Error message',
+            text: resp.statusText,
+            icon: 'error',
+          });
+          return;
+        }
+
+        const data = await resp.json();
+        localStorage.setItem('MSG_token', data.token);
+        localStorage.setItem('MSG_user_id', data.user_id);
+        localStorage.setItem('MSG_username', user.value);
+
+        router.replace('/');
+    }
   
       return {user, pass, conf, submit}
     }

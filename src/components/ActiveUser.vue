@@ -1,39 +1,20 @@
 <template>
-    <li class="user_container" @dblclick="new_room(client.user_id, client.username)">
-        <span class="me" v-if="client.user_id == user_id">{{ 'Me: ' }}</span>
+    <li class="user_container" @dblclick="new_room">
+        <span class="me" v-if="client.Id == user_id">{{ 'Me: ' }}</span>
         <span>{{ client.username }}</span>
     </li>
 </template>
 
 <script>
-import { useStore } from 'vuex';
-
 export default {
     name: 'ActiveUser',
     props: ['client'],
-    setup() {
-        const store = useStore();
+    emits: ['newRoom'],
+    setup(props, { emit }) {
         const user_id = localStorage.getItem('MSG_user_id');
-        const user = localStorage.getItem('MSG_username');
-        const token = localStorage.getItem('MSG_token');
 
-        const new_room = (client_id, chat_name) => {
-            const url = `/new_room?token=${token}` +
-            `&user_id=${user_id}&alias_2=${user}&chat_id=${client_id}&alias=${chat_name}&focused=0`;
-
-            fetch(url, {method: 'POST'})
-            .then(async (resp) => {
-                const json = await resp.json();
-                return {status: resp.status, resp:json}
-            })
-            .then(data => {
-                console.log(data);
-                if (data.status == 200) {
-                    store.commit('add_room', data.resp);
-                } else {
-                    alert(data.resp.msg);
-                }
-            });
+        const new_room = () => {
+            emit('newRoom', props.client.Id);
         }
 
         return {new_room, user_id};

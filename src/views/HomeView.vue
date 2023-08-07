@@ -2,7 +2,7 @@
   <div class="masterContainer">
     <Navbar />
     <div class="home">
-      <Rooms :rooms="rooms" />
+      <Rooms />
       <ChatBox />
       <ConnectedUsers :clients="clients" />
     </div>
@@ -14,10 +14,11 @@ import Navbar from '@/components/Navbar.vue';
 import Rooms from '@/components/Rooms.vue';
 import ConnectedUsers from '@/components/ConnectedUsers.vue';
 import ChatBox from '@/components/ChatBox.vue';
-import { computed } from '@vue/runtime-core';
+import { computed, onMounted } from '@vue/runtime-core';
 import { useStore } from 'vuex';
 
 import { io } from 'socket.io-client';
+import Swal from 'sweetalert2';
 
 export default {
   name: 'Home',
@@ -30,45 +31,45 @@ export default {
 
   setup() {
     const store = useStore();
+    const base_url = store.state.base_url;
+    const base_ws_url = store.state.base_ws_url;
     const rooms = computed(() => store.state.rooms);
     const clients = computed(() => store.state.clients);
+    const token = localStorage.getItem('MSG_jwt_token');
 
-    const user_id = localStorage.getItem('MSG_user_id');
-    const user = localStorage.getItem('MSG_username');
-    const token = localStorage.getItem('MSG_token');
-
-    const socket = io({
-      query: {
-        user,
-        user_id
-      }
-    });
-
-    socket.on('updated', () => {
-      store.commit('set_socket', socket);
-
-      const url = `/home_info?id=${user_id}&token=${token}`;
-      fetch(url)
-      .then(resp => resp.json())
-      .then(data => {
-        store.commit('set_rooms', data.rooms);
-        store.commit('set_clients', data.clients);
+    onMounted(async () => {
+      const socket = io(base_ws_url, {
+        extraHeaders: { 'authorization': token },
       });
-    });
+      socket.on('connect', () => {
+        console.log(socket.id);
+        socket.emit('get_rooms', (data) => {
+          console.log(data);
+          if (data.error) {
+            Swal.fire({
+              title: 'Error message',
+              text: data.message,
+              icon: 'error',
+            });
+            return;
+          }
 
-    socket.on('new_client', (data) => {
-      console.log("New client...");
-      store.commit('add_client', data);
-    });
+          store.commit('set_rooms', data);
+          store.commit('set_socket', socket);
+        });
+      });
 
-    socket.on('new_message', (obj) => {
-      console.log("Here");
-      store.commit('add_message', obj);
-    });
+      socket.on('set_online_clients', (data) => {
+        console.log(data);
+        if (!data) return;
+        store.commit('set_clients', data);
+      });
 
-    socket.on('new_room', (roomObj) => {
-      console.log(roomObj);
-      store.commit('add_room', roomObj);
+      socket.on('new_message', (msg) => {
+        console.log(msg);
+        if (!msg) return;
+        store.dispatch('add_message', msg);
+      });
     });
 
     return {rooms, clients}

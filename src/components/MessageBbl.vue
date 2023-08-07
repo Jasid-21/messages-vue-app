@@ -1,10 +1,10 @@
 <template>
-    <div class="message-bbl" :class="{owner: msg.sender == currUser}">
+    <div class="message-bbl" :class="{owner: msg.user.Id == currUser}">
         <div class="details">
-            <span class="sender">{{ msg.sender }}</span>
+            <span class="sender">{{ msg.user.username }}</span>
             <div class="date">
-                <span class="day">{{ msg.date.split(/[ T]/)[0] + ' ' }}</span>
-                <span class="hour">{{ msg.date.split(/[ T.]/)[1] }}</span>
+                <span class="day">{{ msg.send_date.split(/[ T]/)[0] + ' ' }}</span>
+                <span class="hour">{{ msg.send_date.split(/[ T.]/)[1] }}</span>
             </div>
         </div>
         <div class="message">{{ msg.message }}</div>
@@ -18,13 +18,11 @@ export default {
     props: ['msg', 'currUser'],
     setup(props) {
         const msg = computed(() => props.msg);
-        const dateObj = new Date(msg.value.date);
+        const dateObj = new Date(msg.value.send_date);
         const day = dateObj.getDay();
         const month = dateObj.getMonth() + 1;
         const year = dateObj.getFullYear();
         const date = day + '-' + month + '-' + year;
-
-
 
         return {date}
     }
