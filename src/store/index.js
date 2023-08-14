@@ -2,8 +2,8 @@ import { createStore } from 'vuex'
 
 export default createStore({
   state: {
-    base_url: 'http://localhost:3000',
-    base_ws_url: 'http://localhost:3001',
+    base_url: '',
+    base_ws_url: '',
     io: {},
     rooms: [],
     clients: [],

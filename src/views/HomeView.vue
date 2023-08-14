@@ -38,7 +38,7 @@ export default {
     const token = localStorage.getItem('MSG_jwt_token');
 
     onMounted(async () => {
-      const socket = io(base_ws_url, {
+      const socket = io({
         extraHeaders: { 'authorization': token },
       });
       socket.on('connect', () => {
